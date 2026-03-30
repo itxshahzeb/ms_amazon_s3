@@ -14,7 +14,7 @@ Bucket name as any of amazon s3 bucket name from where data to accessed or uploa
 
 Installation
 ============
-- www.odoo.com/documentation/17.0/setup/install.html
+- www.odoo.com/documentation/19.0/setup/install.html
 - Install our custom addon
 
 License
@@ -24,18 +24,17 @@ General Public License, Version 3 (AGPL v3).
 
 Company
 -------
-* `Cybrosys Techno Solutions <https://cybrosys.com/>`__
+* `MountSol <https://mountsol.com>`__
 
 Credits
 -------
-* Developer: (v16) Aslam A K,
-             (v17) Anfas Faisal K
-Contact: odoo@cybrosys.com
+* Developer: MountSol
+Contact: contact@mountsol.com
 
 Contacts
 --------
-* Mail Contact : odoo@cybrosys.com
-* Website : https://cybrosys.com
+* Mail Contact : contact@mountsol.com
+* Website : https://mountsol.com
 
 Bug Tracker
 -----------
@@ -43,11 +42,11 @@ Bugs are tracked on GitHub Issues. In case of trouble, please check there if you
 
 Maintainer
 ==========
-.. image:: https://cybrosys.com/images/logo.png
-   :target: https://cybrosys.com
+.. image:: https://mountsol.com/images/logo.png
+   :target: https://mountsol.com
 
-This module is maintained by Cybrosys Technologies.
-For support and more information, please visit https://www.cybrosys.com
+This module is maintained by MountSol.
+For support and more information, please visit https://www.mountsol.com
 
 Further information
 ===================

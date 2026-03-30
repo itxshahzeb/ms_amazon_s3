@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ################################################################################
 #
-#    Cybrosys Technologies Pvt. Ltd.
+#    MountSol
 #
-#    Copyright (C) 2024-TODAY Cybrosys Technologies(<https://www.cybrosys.com>).
-#    Author: Anfas Faisal K (odoo@cybrosys.info)
+#    Copyright (C) 2024-TODAY MountSol(<https://www.mountsol.com>).
+#    Author: MountSol (contact@mountsol.com)
 #
 #    You can modify it under the terms of the GNU AFFERO
 #    GENERAL PUBLIC LICENSE (AGPL v3), Version 3.
@@ -38,7 +38,7 @@ class AmazonDashboard(models.Model):
 
     def amazon_view_files(self):
         """
-        Fetch all files from s3 and returns it.
+        Fetch all files from s3 and returns it as a list of dicts.
         """
         access_key = self.env['ir.config_parameter'].get_param(
             'amazon_s3_connector.amazon_access_key')
@@ -58,27 +58,37 @@ class AmazonDashboard(models.Model):
                 aws_secret_access_key=access_secret
             )
             response = client.list_objects(Bucket=bucket_name)
-            file = []
-            for data in response['Contents']:
+            files = []
+            image_extensions = {'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'}
+            for data in response.get('Contents', []):
+                if data['Size'] == 0:
+                    continue
                 url = client.generate_presigned_url(
                     ClientMethod='get_object',
                     Params={'Bucket': bucket_name, 'Key': data['Key']})
-                if data['Size'] == 0:
-                    continue
                 size_bytes = data['Size'] / 1024
                 if size_bytes > 1024:
                     size = str(
                         round(data['Size'] / (1024 * 1024), 1)) + ' MB'
                 else:
                     size = str(round(data['Size'] / 1024, 1)) + ' KB'
-                file_type = str.upper(
-                    os.path.splitext(data['Key'])[1].replace('.', ''))
-                file.append(
-                    [data['Key'], url, file_type,
-                     str(data['LastModified']), size])
-            return file
+                ext = os.path.splitext(data['Key'])[1].replace('.', '').lower()
+                file_type = ext.upper()
+                is_image = ext in image_extensions
+                is_pdf = ext == 'pdf'
+                files.append({
+                    'name': data['Key'],
+                    'url': url,
+                    'file_type': file_type,
+                    'last_modified': str(data['LastModified']),
+                    'size': size,
+                    'is_image': is_image,
+                    'is_pdf': is_pdf,
+                    'extension': ext,
+                })
+            return files
         except Exception as e:
-            return ['e', e]
+            return {'error': str(e)}
 
     def scheduler_action_amazon_upload(self):
         """

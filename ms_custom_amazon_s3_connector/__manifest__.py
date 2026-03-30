@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ################################################################################
 #
-#    Cybrosys Technologies Pvt. Ltd.
+#    MountSol
 #
-#    Copyright (C) 2024-TODAY Cybrosys Technologies(<https://www.cybrosys.com>).
-#    Author: Anfas Faisal K (odoo@cybrosys.info)
+#    Copyright (C) 2024-TODAY MountSol(<https://www.mountsol.com>).
+#    Author: MountSol (contact@mountsol.com)
 #
 #    You can modify it under the terms of the GNU AFFERO
 #    GENERAL PUBLIC LICENSE (AGPL v3), Version 3.
@@ -19,38 +19,44 @@
 #    If not, see <http://www.gnu.org/licenses/>.
 #
 ################################################################################
+# -*- coding: utf-8 -*-
 {
-    'name': "Ms Custom Odoo Amazon S3 Connector",
-    # 'version': "17.0.1.0.0",
-    'category': "Document Management",
-    'summary': """ Connect with Amazon S3 Files from Odoo""",
-    'description': """This module was developed to upload to Amazon S3 Cloud 
-                      Storage as well as access files from Amazon S3 Cloud 
-                      Storage in Odoo.""",
-    'author': 'Cybrosys Techno Solutions',
-    'company': 'Cybrosys Techno Solutions',
-    'maintainer': 'Cybrosys Techno Solutions',
-    'website': "https://www.cybrosys.com",
-    'depends': ['base_setup'],
+    'name': 'Amazon S3 Connector',
+    'version': '19.0.1.0.0',
+    'category': 'Document Management',
+    'summary': 'Store and manage Odoo attachments with Amazon S3 Cloud Storage',
+    'description': 'See static/description/index.html',
+    'author': 'MountSol',
+    'website': 'https://www.mountsol.com',
+    'company': 'MountSol',
+    'maintainer': 'MountSol',
+    'support': 'contact@mountsol.com',
+    'license': 'AGPL-3',
+    'depends': [
+        'base',
+        'mail',
+        'project',
+        'planning',
+        'contacts',
+    ],
     'data': [
         'security/ir.model.access.csv',
-        'data/schedule_action.xml',
         'views/amazon_dashboard_views.xml',
+        'views/amazon_upload_file_views.xml',
         'views/res_config_settings_views.xml',
-        'wizard/amazon_upload_file_views.xml'
+        'data/schedule_action.xml',
     ],
     'assets': {
         'web.assets_backend': [
             'amazon_s3_connector/static/src/js/amazon.js',
             'amazon_s3_connector/static/src/xml/amazon_dashboard_template.xml',
-            'amazon_s3_connector/static/src/scss/amazon.scss'
-        ]
+        ],
     },
-    'external_dependencies': {'python': ['boto3']},
-    'images': ['static/description/banner.jpg'],
-    'license': 'AGPL-3',
+    'images': [
+        'static/description/banner.png',
+    ],
     'installable': True,
     'auto_install': False,
     'application': True,
-    'uninstall_hook': 'uninstall_hook'
+    'uninstall_hook': 'uninstall_hook',
 }

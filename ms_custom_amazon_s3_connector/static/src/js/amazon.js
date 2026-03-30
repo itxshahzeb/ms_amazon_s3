@@ -1,73 +1,123 @@
 /** @odoo-module **/
 import { registry } from "@web/core/registry";
-import { Component } from "@odoo/owl";
-import { onWillStart, useRef } from "@odoo/owl";
+import { Component, useState, onWillStart } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 
 export class AmazonDashboard extends Component {
+    static template = "AmazonDashboard";
+
     setup() {
         this.orm = useService('orm');
         this.actionService = useService("action");
-        this.rootRef = useRef("root");
+        this.notification = useService("notification");
+
+        this.state = useState({
+            files: [],
+            filteredFiles: [],
+            searchQuery: "",
+            filterType: "ALL FILES",
+            loading: true,
+            error: null,
+            previewFile: null,
+            viewMode: "grid", // "grid" or "list"
+            sortField: null,
+            sortAsc: true,
+        });
 
         onWillStart(async () => {
-            await this.fetch_data();
+            await this.fetchData();
         });
     }
 
-    async fetch_data() {
-        var self = this.actionService;
-        this.orm.call('amazon.dashboard', 'amazon_view_files', ['']).then(function (result) {
+    async fetchData() {
+        this.state.loading = true;
+        this.state.error = null;
+        try {
+            const result = await this.orm.call('amazon.dashboard', 'amazon_view_files', ['']);
             if (!result) {
-                self.doAction({
-                    'type': 'ir.actions.client',
-                    'tag': 'display_notification',
-                    'params': {
-                        'message': 'Please Setup The Access Keys',
-                        'type': 'warning',
-                        'sticky': false,
-                    }
-                });
-            } else if (result[0] === 'e') {
-                self.doAction({
-                    'type': 'ir.actions.client',
-                    'tag': 'display_notification',
-                    'params': {
-                        'message': 'Failed to Load Files [ ' + result[1] + ' ]',
-                        'type': 'warning',
-                        'sticky': false,
-                    }
-                });
+                this.state.error = "Please configure your Amazon S3 access keys in Settings.";
+                this.notification.add("Please set up the Access Keys", { type: "warning" });
+            } else if (result.error) {
+                this.state.error = "Failed to load files: " + result.error;
+                this.notification.add("Failed to load files: " + result.error, { type: "warning" });
             } else {
-                var container = document.querySelector('.amazon_s3_files');
-                container.innerHTML = '';
-                var count = 1;
-                result.forEach(function (name) {
-                    var tr = document.createElement('tr');
-                    tr.className = 'file_row table-secondary';
-                    tr.innerHTML = '<td scope="row" style="text-align:center;">' + count + '</td>' +
-                        '<td><a class="file_name" href="' + name[1] + '"></a>' + name[0] +
-                        '<i class="fa fa-download download_file"></i></td>' +
-                        '<td>' + name[2] + '</td><td>' + name[3] + '</td><td>' + name[4] + '</td>';
-                    container.appendChild(tr);
-                    count++;
-                });
+                this.state.files = result;
+                this.applyFilters();
             }
-        });
+        } catch (e) {
+            this.state.error = "An unexpected error occurred.";
+        }
+        this.state.loading = false;
     }
 
-    sort_name(ev) {
-        var tbody = document.querySelector("#files_table tbody");
-        var rows = Array.from(tbody.querySelectorAll("tr"));
-        rows.sort(function (a, b) {
-            var x = a.querySelector("td:nth-child(2)").textContent.toLowerCase();
-            var y = b.querySelector("td:nth-child(2)").textContent.toLowerCase();
-            return x.localeCompare(y);
-        });
-        rows.forEach(function (row) { tbody.appendChild(row); });
+    applyFilters() {
+        let files = [...this.state.files];
+        // Apply search
+        if (this.state.searchQuery) {
+            const q = this.state.searchQuery.toLowerCase();
+            files = files.filter(f => f.name.toLowerCase().includes(q));
+        }
+        // Apply type filter
+        if (this.state.filterType !== "ALL FILES") {
+            files = files.filter(f => {
+                const ext = f.extension;
+                switch (this.state.filterType) {
+                    case "pdf": return ext === "pdf";
+                    case "image": return ["jpeg", "jpg", "png", "gif", "bmp", "webp", "svg"].includes(ext);
+                    case "zip": return ext === "zip";
+                    case "txt": return ["txt", "docx"].includes(ext);
+                    case "xlsx": return ext === "xlsx";
+                    default: return true;
+                }
+            });
+        }
+        // Apply sort
+        if (this.state.sortField) {
+            const field = this.state.sortField;
+            const asc = this.state.sortAsc;
+            files.sort((a, b) => {
+                const va = (a[field] || "").toString().toLowerCase();
+                const vb = (b[field] || "").toString().toLowerCase();
+                const cmp = va.localeCompare(vb, undefined, { numeric: true });
+                return asc ? cmp : -cmp;
+            });
+        }
+        this.state.filteredFiles = files;
     }
 
-    upload(ev) {
+    onSearchInput(ev) {
+        this.state.searchQuery = ev.target.value;
+        this.applyFilters();
+    }
+
+    onFilterChange(ev) {
+        this.state.filterType = ev.target.value;
+        this.applyFilters();
+    }
+
+    sortBy(field) {
+        if (this.state.sortField === field) {
+            this.state.sortAsc = !this.state.sortAsc;
+        } else {
+            this.state.sortField = field;
+            this.state.sortAsc = true;
+        }
+        this.applyFilters();
+    }
+
+    toggleView(mode) {
+        this.state.viewMode = mode;
+    }
+
+    selectFile(file) {
+        this.state.previewFile = file;
+    }
+
+    closePreview() {
+        this.state.previewFile = null;
+    }
+
+    upload() {
         this.actionService.doAction({
             name: "Upload File",
             type: 'ir.actions.act_window',
@@ -79,50 +129,38 @@ export class AmazonDashboard extends Component {
         });
     }
 
-    sort_number(ev) {
-        var tbody = document.querySelector('#files_table tbody');
-        var rows = Array.from(tbody.querySelectorAll('tr'));
-        rows.sort(function (a, b) {
-            var x = a.querySelector('td:first-child').textContent;
-            var y = b.querySelector('td:first-child').textContent;
-            return x.localeCompare(y, false, { numeric: true });
-        });
-        rows.forEach(function (row) { tbody.appendChild(row); });
+    async refresh() {
+        this.state.previewFile = null;
+        await this.fetchData();
     }
 
-    search_file(ev) {
-        var value = document.querySelector('.amazon_header-search-input').value.toLowerCase();
-        document.querySelectorAll('.file_row').forEach(function (row) {
-            if (row.textContent.toLowerCase().indexOf(value) > -1) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
+    getFileIcon(file) {
+        const ext = file.extension;
+        if (file.is_image) return "fa-file-image-o";
+        if (file.is_pdf) return "fa-file-pdf-o";
+        if (["zip", "rar", "7z", "tar", "gz"].includes(ext)) return "fa-file-archive-o";
+        if (["doc", "docx", "txt", "rtf"].includes(ext)) return "fa-file-text-o";
+        if (["xls", "xlsx", "csv"].includes(ext)) return "fa-file-excel-o";
+        if (["ppt", "pptx"].includes(ext)) return "fa-file-powerpoint-o";
+        if (["mp4", "avi", "mov", "mkv"].includes(ext)) return "fa-file-video-o";
+        if (["mp3", "wav", "flac"].includes(ext)) return "fa-file-audio-o";
+        return "fa-file-o";
     }
 
-    filter_files(ev) {
-        var value = document.querySelector("#filter").value;
-        document.querySelectorAll('.file_row').forEach(function (row) {
-            row.style.display = 'none';
-            var file_name = row.querySelector('a').textContent;
-            var file_type = file_name.slice((file_name.lastIndexOf(".") - 1 >>> 0) + 2);
-            if (value === 'ALL FILES') {
-                row.style.display = '';
-            } else if (value === file_type) {
-                row.style.display = '';
-            } else if (value === 'image') {
-                if (['jpeg', 'jpg', 'png'].includes(file_type)) {
-                    row.style.display = '';
-                }
-            } else if (value === 'txt') {
-                if (['txt', 'docx'].includes(file_type)) {
-                    row.style.display = '';
-                }
-            }
-        });
+    getIconColor(file) {
+        const ext = file.extension;
+        if (file.is_image) return "#4CAF50";
+        if (file.is_pdf) return "#F44336";
+        if (["zip", "rar", "7z", "tar", "gz"].includes(ext)) return "#FF9800";
+        if (["doc", "docx", "txt", "rtf"].includes(ext)) return "#2196F3";
+        if (["xls", "xlsx", "csv"].includes(ext)) return "#4CAF50";
+        return "#9E9E9E";
+    }
+
+    getSortIcon(field) {
+        if (this.state.sortField !== field) return "fa-sort";
+        return this.state.sortAsc ? "fa-sort-asc" : "fa-sort-desc";
     }
 }
 
-AmazonDashboard.template = "AmazonDashboard";
 registry.category("actions").add("amazon_dashboard", AmazonDashboard);
