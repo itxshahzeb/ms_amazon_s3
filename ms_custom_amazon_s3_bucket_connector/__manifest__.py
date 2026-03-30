@@ -21,7 +21,7 @@
 ################################################################################
 # -*- coding: utf-8 -*-
 {
-    'name': 'Amazon S3 Connector',
+    'name': 'Ms Custom Bucket Amazon S3 Connector',
     'version': '19.0.1.0.0',
     'category': 'Document Management',
     'summary': 'Store and manage Odoo attachments with Amazon S3 Cloud Storage',
