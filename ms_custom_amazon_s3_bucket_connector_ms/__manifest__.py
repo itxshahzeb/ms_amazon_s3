@@ -21,7 +21,7 @@
 ################################################################################
 # -*- coding: utf-8 -*-
 {
-    'name': 'Ms Custom Bucket Amazon S3 Connector',
+    'name': 'Ms Custom Bucket Amazon S3 Connector S3',
     'version': '19.0.1.0.0',
     'category': 'Document Management',
     'summary': 'Store and manage Odoo attachments with Amazon S3 Cloud Storage',
@@ -31,7 +31,7 @@
     'company': 'MountSol',
     'maintainer': 'MountSol',
     'support': 'contact@mountsol.com',
-    'license': 'AGPL-3',
+    'license': 'LGPL-3',
     'depends': [
         'base',
         'mail',
